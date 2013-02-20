@@ -19,16 +19,20 @@ module MsendT
 import Network
 import Network.TLS
 import Network.TLS.Extra
-import System.Cmd
+import System.Cmd          (rawSystem)
 import System.Random
+import System.IO
 import System.FilePath
+import Text.Printf
 import Control.Applicative ( (<$>) )
 import Control.Monad       (unless)
 import Data.Monoid         ( (<>) )
-import qualified Crypto.Random.AESCtr        as RNG
+import Data.List           (isPrefixOf)
+import qualified Crypto.Random.AESCtr        as RNG (makeSystem)
 import qualified Data.ByteString.Char8       as BC
 import qualified Data.ByteString.Lazy.Char8  as BL
-import qualified Data.ByteString.Base64.Lazy as BE
+import qualified Data.ByteString.Lazy.UTF8   as BLU (fromString)
+import qualified Data.ByteString.Base64.Lazy as BE  (encode)
 import qualified Data.Text                   as T
 import qualified Data.Text.IO                as T
 
@@ -91,6 +95,17 @@ mimeMsg g from to subject body attachments = do
 
 --- Mail Part ----
 
+cWrite :: Handle -> String -> IO ()
+cWrite h s  = do
+    hPrintf h "%s\r\n" s
+    printf    "> %s\n" s
+
+cWaitFor :: Handle -> String -> IO ()
+cWaitFor h str = do
+    ln <- hGetLine h
+    putStrLn ln
+    unless (str `isPrefixOf` ln) (cWaitFor h str)
+
 tWrite :: Context -> BL.ByteString -> IO ()
 tWrite ctx bts  = do
     sendData ctx $ bts <> "\r\n"
@@ -109,7 +124,14 @@ emailT provider auth from to subject email attachments = do
       params   = defaultParamsClient{pCiphers = ciphers}
     g <- RNG.makeSystem
     mimeMail <- mimeMsg g from to subject email attachments
-    con <- connectionClient (T.unpack $ server provider) (show $ port provider) params g
+    h <- connectTo (T.unpack $ server provider) (PortNumber (fromIntegral (port provider)))
+    hSetBuffering h LineBuffering
+    cWrite h "EHLO"
+    cWaitFor h "250-STARTTLS"
+    cWrite h "STARTTLS"
+    cWaitFor h "220"
+    con <- contextNewOnHandle h params g
+    handshake con
     tWrite con "EHLO"
     tWaitFor con "250"
     tWrite con "AUTH LOGIN"
@@ -124,7 +146,7 @@ emailT provider auth from to subject email attachments = do
     tWaitFor con "250"
     tWrite con "DATA"
     tWaitFor con "354"
-    tWrite con $ BL.pack $ T.unpack mimeMail
+    tWrite con $ BLU.fromString $ T.unpack mimeMail
     tWrite con "\r\n."
     tWaitFor con "250"
     tWrite con "QUIT"
