@@ -1,4 +1,6 @@
 #!/usr/bin/env runhaskell
+{-# LANGUAGE OverloadedStrings #-}
+
 -- Type   : module
 -- Crée le: 17 Fév. 2013 à 15h23
 -- Auteur : Sarfraz Kapasi
@@ -11,7 +13,6 @@ module MailData
 , emptyCred
 , gmail
 ) where
-{-# LANGUAGE OverloadedStrings #-}
 
 data Provider = Provider {server :: String, port :: Int}
 data Auth     = Auth     {user   :: String, pass :: String}

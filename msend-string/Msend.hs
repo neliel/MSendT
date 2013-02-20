@@ -6,7 +6,7 @@
 -- Auteur : Sarfraz Kapasi
 -- License: GPLv3
 
-module TGMail
+module Msend
 ( emailT
 ) where
 

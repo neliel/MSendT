@@ -11,6 +11,7 @@ module MIMEMsg
 ) where
 
 import Control.Applicative ( (<$>) )
+import Data.Monoid         ( (<>) )
 import System.Random
 import System.FilePath
 import MailData
@@ -35,7 +36,7 @@ mimeMsgA :: String -> [(String,FilePath)] -> IO String
 mimeMsgA boundary attachments =
   if null attachments
      then return ""
-     else concat <$> mapM (mimeA boundary) attachments
+     else TL.concat <$> mapM (mimeA boundary) attachments
 
 mimeA :: String -> (String,FilePath) -> IO String
 mimeA boundary attachment =
