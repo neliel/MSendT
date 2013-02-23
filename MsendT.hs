@@ -30,8 +30,8 @@ import Data.Monoid         ( (<>) )
 import Data.List           (isPrefixOf)
 import qualified Crypto.Random.AESCtr        as RNG (makeSystem)
 import qualified Data.ByteString.Char8       as BC
-import qualified Data.ByteString.Lazy.Char8  as BL
-import qualified Data.ByteString.Lazy.UTF8   as BLU (fromString)
+import qualified Data.ByteString.Lazy        as BL
+import qualified Data.ByteString.Lazy.UTF8   as BLU (fromString,toString)
 import qualified Data.ByteString.Base64.Lazy as BE  (encode)
 import qualified Data.Text                   as T
 import qualified Data.Text.IO                as T
@@ -80,7 +80,7 @@ mimeA boundary attachment =
   <> "Content-Type: " <> fst attachment <> "\n"
   <> "Content-Disposition: attachment; filename=\"" <> T.pack (takeFileName $ snd attachment) <> "\"" <> "\n"
   <> "Content-Transfer-Encoding: base64" <> "\n\n"
-  <> T.pack (BL.unpack $ BE.encode x) <> "\n\n")
+  <> T.pack (BLU.toString $ BE.encode x) <> "\n\n")
 
 mimeMsgC :: T.Text -> T.Text
 mimeMsgC boundary =
@@ -136,13 +136,13 @@ emailT provider auth from to subject email attachments = do
     tWaitFor con "250"
     tWrite con "AUTH LOGIN"
     tWaitFor con "334"
-    tWrite con $ BE.encode $ BL.pack $ T.unpack $ user auth
+    tWrite con $ BE.encode $ BLU.fromString $ T.unpack $ user auth
     tWaitFor con "334"
-    tWrite con $ BE.encode $ BL.pack $ T.unpack $ pass auth
+    tWrite con $ BE.encode $ BLU.fromString $ T.unpack $ pass auth
     tWaitFor con "235"
-    tWrite con $ BL.pack $ T.unpack ("MAIL FROM:<"<> mail from <>">")
+    tWrite con $ BLU.fromString $ T.unpack ("MAIL FROM:<"<> mail from <>">")
     tWaitFor con "250"
-    tWrite con $ BL.pack $ T.unpack ("RCPT TO:<"<> mail to <>">")
+    tWrite con $ BLU.fromString $ T.unpack ("RCPT TO:<"<> mail to <>">")
     tWaitFor con "250"
     tWrite con "DATA"
     tWaitFor con "354"
