@@ -1,4 +1,3 @@
-#!/usr/bin/env runhaskell
 {-# LANGUAGE OverloadedStrings #-}
 
 -- Type   : module
@@ -6,10 +5,11 @@
 -- Auteur : Sarfraz Kapasi
 -- License: GPLv3
 
-module MsendT
+module MSendT
 ( Provider (..)
 , Auth     (..)
 , Cred     (..)
+, emptyAuth
 , emptyCred
 , gmail
 , mimeMsg
@@ -41,6 +41,12 @@ import qualified Data.Text.IO                as T
 data Provider = Provider {server :: T.Text, port :: Int}
 data Auth     = Auth     {user   :: T.Text, pass :: T.Text}
 data Cred     = Cred     {name   :: T.Text, mail :: T.Text, company :: T.Text}
+
+emptyAuth :: Auth
+emptyAuth = Auth
+  { user = ""
+  , pass = ""
+  }
 
 emptyCred :: Cred
 emptyCred = Cred { name    = ""
